@@ -6,6 +6,9 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
+/**
+ * A client class that connects to a socket server and sends commands.
+ */
 public class Client {
 
     private static final String HOST = "localhost";
@@ -13,19 +16,27 @@ public class Client {
 
     private static final Gson gson = new Gson();
 
+    /**
+     * Main method of the client. Connects to the server and starts communication.
+     */
     public static void main(String[] args) {
         try (Socket socket = new Socket(HOST, PORT)) {
-            System.out.println(jsonInfo("status", "Połączono z serwerem"));
+            System.out.println(JsonUtil.jsonInfo("status", "Połączono z serwerem"));
 
             handleCommunication(socket);
 
         } catch (IOException e) {
-            System.err.println(jsonError("Błąd połączenia z serwerem: " + e.getMessage()));
+            System.err.println(JsonUtil.jsonError("Błąd połączenia z serwerem: " + e.getMessage()));
         }
 
-        System.out.println(jsonInfo("status", "Zakończono działanie klienta"));
+        System.out.println(JsonUtil.jsonInfo("status", "Zakończono działanie klienta"));
     }
 
+    /**
+     * Handles user interaction and command exchange with the server.
+     * @param socket connection to the server
+     * @throws IOException if communication fails
+     */
     private static void handleCommunication(Socket socket) throws IOException {
         try (
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
@@ -87,24 +98,6 @@ public class Client {
                     running = false;
                 }
             }
-        }
-    }
-
-    private static String jsonInfo(String key, String value) {
-        return gson.toJson(new InfoMessage(key, value));
-    }
-
-    private static String jsonError(String message) {
-        return gson.toJson(new InfoMessage("error", message));
-    }
-
-    private static class InfoMessage {
-        String type;
-        String message;
-
-        public InfoMessage(String type, String message) {
-            this.type = type;
-            this.message = message;
         }
     }
 }

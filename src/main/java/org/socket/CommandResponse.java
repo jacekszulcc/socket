@@ -1,12 +1,19 @@
 package org.socket;
 
+import java.util.List;
+import com.google.gson.annotations.SerializedName;
+
 public class CommandResponse {
     public String command;
     public String status;
     public String version;
-    public String created_at;
-    public Long uptime_seconds;
+    @SerializedName("created_at")
+    public String createdAt;
+    @SerializedName("uptime_seconds")
+    public Long uptimeSeconds;
     public String error;
+    public List<CommandInfo> availableCommands;
+
 
     public CommandResponse(String command) {
         this.command = command;
