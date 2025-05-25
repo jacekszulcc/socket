@@ -86,4 +86,19 @@ public class UserManager {
             System.err.println("Błąd zapisu users.json" + e.getMessage());
         }
     }
+
+    /**
+     * Logs in a user by checking provided credentials.
+     *
+     * @param username the username
+     * @param password the password
+     * @return the logged-in User object if credentials are correct, otherwise null
+     */
+    public User loginUser(String username, String password) {
+        User user = getUserByUsername(username);
+        if (user != null && user.getPassword().equals(password)) {
+            return user;
+        }
+        return null;
+    }
 }
