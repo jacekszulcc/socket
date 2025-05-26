@@ -82,4 +82,13 @@ public class JsonUtil {
         return gson.fromJson(new FileReader(filePath), listType);
     }
 
+    /**
+     * Checks if the given user has admin privileges
+     *
+     * @param user the user to check
+     * @return true if user has role "admin", false otherwise
+     */
+    public static boolean isAdmin(User user) {
+        return user != null && "admin".equalsIgnoreCase(user.getRole());
+    }
 }
