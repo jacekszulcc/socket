@@ -101,4 +101,12 @@ public class UserManager {
         }
         return null;
     }
+
+    /**
+     * Save all users to disk by delegating to internal save method.
+     * Intended for external use (e.g. after message or user updates).
+     */
+    public void saveAll() {
+        saveUsersToFile();
+    }
 }
