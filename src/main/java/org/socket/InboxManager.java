@@ -10,15 +10,20 @@ public class InboxManager {
     /**
      * Processes the 'inbox' command.
      * Allows users to view their own inbox and admins to view others' inboxes.
+     * After viewing, all messages in the inbox are marked as read.
      *
-     * @param requester the user issuing the command
-     * @param args      command arguments (e.g., "inbox", "inbox username")
-     * @param userManager instance for user data access
-     * @return JSON-formatted inbox or error message
+     * Usage:
+     * - inbox               -> view own inbox
+     * - inbox <username>    -> admin only, view another user's inbox
+     *
+     * @param requester   the user who issued the command
+     * @param args        command arguments (e.g., "inbox", "inbox username")
+     * @param userManager manager for accessing and saving user data
+     * @return JSON-formatted inbox content or error message
      */
     public String processInboxCommand(User requester, String[] args, UserManager userManager) {
         if (args.length == 1) {
-            return formatInbox(requester);
+            return formatInbox(requester, userManager);
         } else if (args.length == 2) {
             String targetUsername = args[1];
             if (!JsonUtil.isAdmin(requester) && !requester.getUsername().equalsIgnoreCase(targetUsername)) {
@@ -30,19 +35,20 @@ public class InboxManager {
                 return JsonUtil.jsonError("User not found");
             }
 
-            return formatInbox(target);
+            return formatInbox(target, userManager);
         } else {
             return JsonUtil.jsonError("Invalid inbox command.");
         }
     }
 
     /**
-     * Formats the inbox of given user.
+     * Formats the inbox content of a user and marks all messages as read.
      *
-     * @param user the user whose inbox should be shown
-     * @return JSON-formatted message list
+     * @param user        the user whose inbox is being displayed
+     * @param userManager the user manager used to persist changes
+     * @return JSON-formatted string of inbox content
      */
-    private String formatInbox(User user) {
+    private String formatInbox(User user, UserManager userManager) {
         List<Message> inbox = user.getInbox();
 
         if (inbox == null || inbox.isEmpty()) {
@@ -57,7 +63,11 @@ public class InboxManager {
                     .append(" | Read: ").append(msg.isRead())
                     .append(" | Content: ").append(msg.getContent())
                     .append("\n");
+
+            msg.setRead(true);
         }
+
+        userManager.saveAll();
 
         return JsonUtil.jsonInfo("inbox", sb.toString());
     }
