@@ -18,6 +18,7 @@ public class MessageManager {
 
     /**
      * Sends a message from one user to another
+     * Updated to enforce inbox limit: max 5 unread messages per recipient.
      *
      * @param fromUser   the sender (must be a logged-in User object)
      * @param toUsername the recipient's username
