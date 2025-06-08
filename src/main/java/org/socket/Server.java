@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,6 +21,9 @@ public class Server {
     private static final String VERSION = "1.1.0";
     private static final Instant START_TIME = Instant.now();
     private static final String CREATED_AT = DateTimeFormatter.ISO_INSTANT.format(START_TIME);
+
+    private static final UserManager userManager = new UserManager();
+    private static final MessageManager messageManger = new MessageManager(userManager);
 
     private static final Gson gson = new Gson();
 
@@ -79,11 +83,15 @@ public class Server {
     }
 
     /**
-     * Processes a command and returns a response object.
-     * @param command command sent by the client
-     * @return response object containing results of the command
+     * Processes a raw command string sent by the client and returns a response object
+     * .
+     * @param input full command line sent by the client (e.g. "send ania Hello")
+     * @return response containing the result of command execution
      */
-    private static CommandResponse handleCommand(String command) {
+    private static CommandResponse handleCommand(String input) {
+        String[] args = input.trim().split("\\s+");
+        String command = args[0].toLowerCase();
+
         CommandResponse response = new CommandResponse(command);
 
         switch (command) {
@@ -100,13 +108,61 @@ public class Server {
                   new CommandInfo("uptime", "Czas działania serwera"),
                   new CommandInfo("info", "Wersja i data utworzenia"),
                   new CommandInfo("help", "Lista dostępnych komend"),
-                  new CommandInfo("stop", "Zatrzymuje serwer i klienta")
+                  new CommandInfo("stop", "Zatrzymuje serwer i klienta"),
+                  new CommandInfo("send", "Wyślij wiadomość: send <użytkownik> <treść>")
                 );
             }
             case "stop" -> response.status = "Zamykanie serwera i klienta...";
+
+            case "send" -> {
+                // replace with session -based logged user when login is implemented
+                User tempUser = userManager.getUserByUsername("jacek");
+                return processSendCommand(tempUser, args, messageManger);
+            }
+
             default -> response.error = "Nieznana komenda: " + command;
         }
 
         return response;
     }
+
+    /**
+     * Handles the 'send' command with allows a logged-in user to send a message.
+     *
+     * Usage: send <recipient> <message>
+     *
+     * @param sender         the logged-in user
+     * @param args           the command arguments (parsed from input string)
+     * @return response object with status or error message
+     */
+    private static CommandResponse processSendCommand(User sender, String[] args, MessageManager messageManager) {
+        CommandResponse response = new CommandResponse("send");
+
+        if (sender == null ) {
+            response.error = "Musisz być zalogowany, aby wysłać wiadomości.";
+            return response;
+        }
+
+        if (args.length < 3) {
+            response.error = "Użycie: send <odbiorca> <wiadomość>";
+            return response;
+        }
+
+        String recipient = args[1];
+        String content = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+
+        String result = messageManager.sendMessage(sender, recipient, content);
+
+
+        response.status = switch (result) {
+            case "ok" -> "Wiadomość wysłana";
+            case "user_not_found" -> "Nie znaleziono użytkownika.";
+            case "inbox_full" -> "Szkrzynka odbiorcy jest pełna.";
+            case "too_long" -> "Wiadomość jest zbyt długa (max 255 znaków).";
+            default -> "Nieznany błąd.";
+        };
+
+        return response;
+    }
+
 }
