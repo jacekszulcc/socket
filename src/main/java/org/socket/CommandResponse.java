@@ -13,6 +13,7 @@ public class CommandResponse {
     public Long uptimeSeconds;
     public String error;
     public List<CommandInfo> availableCommands;
+    public String messageList;
 
 
     public CommandResponse(String command) {

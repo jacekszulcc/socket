@@ -23,7 +23,7 @@ public class Server {
     private static final String CREATED_AT = DateTimeFormatter.ISO_INSTANT.format(START_TIME);
 
     private static final UserManager userManager = new UserManager();
-    private static final MessageManager messageManger = new MessageManager(userManager);
+    private static final MessageManager messageManager = new MessageManager(userManager);
 
     private static final Gson gson = new Gson();
 
@@ -117,7 +117,13 @@ public class Server {
             case "send" -> {
                 // replace with session -based logged user when login is implemented
                 User tempUser = userManager.getUserByUsername("jacek");
-                return processSendCommand(tempUser, args, messageManger);
+                return processSendCommand(tempUser, args, messageManager);
+            }
+
+            case "inbox" -> {
+                // replace with session -based logged user when login is implemented
+                User tempUser = userManager.getUserByUsername("jacek");
+                return processInboxCommand(tempUser, userManager);
             }
 
             default -> response.error = "Nieznana komenda: " + command;
@@ -161,6 +167,55 @@ public class Server {
             case "too_long" -> "Wiadomość jest zbyt długa (max 255 znaków).";
             default -> "Nieznany błąd.";
         };
+
+        return response;
+    }
+
+    /**
+     * Processes the "inbox" command for the currently logged-in user.
+     *
+     * This command retrieves all unread messages from the user's inbox,
+     * marks them as read, and returns a formatted response.
+     *
+     * @param user the currently logged-in user
+     * @param userManager the UserManager instance responsible for user data
+     * @return a CommandResponse containing the list of messages or a notification if none
+     */
+    private static CommandResponse processInboxCommand(User user, UserManager userManager){
+        CommandResponse response = new CommandResponse("inbox");
+
+        if (user == null) {
+            response.error = "Musisz być zalogowany, aby sprawdzić skrzynkę.";
+            return response;
+        }
+
+        List<Message> inbox = user.getInbox();
+        if (inbox == null || inbox.isEmpty()) {
+            response.status = "Brak nowych wiadomości.";
+            return response;
+        }
+
+        List<Message> unreadMessages = inbox.stream()
+                .filter(m -> !m.isRead())
+                .toList();
+
+        if (unreadMessages.isEmpty()) {
+            response.status = "Brak nowych wiadomości.";
+            return response;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (Message msg : unreadMessages) {
+            sb.append("Od: ").append(msg.getFrom()).append("\n");
+            sb.append("Treść: ").append(msg.getContent()).append("\n");
+            sb.append("---\n");
+
+            msg.setRead(true);
+        }
+
+        userManager.saveAll();
+
+        response.messageList = sb.toString().trim();
 
         return response;
     }
